@@ -246,11 +246,32 @@ exports.v3_2 = functions.https.onRequest((req, res) => {
   if (req.method === 'POST') {
     const config = {
       DATASET: 'TRAFFY_TEST',
-      TABLE: 'V3_1_1_2',
+      TABLE: 'V3_2_1_2_11',
     }
-    const rows = Object.assign({}, req.body.data)
-    console.log(rows)
-    res.status(200).send('ok')
+    let rows = req.body.data
+    console.log(JSON.stringify(rows))
+    if (!Array.isArray(rows)) {
+      rows = [rows]
+    }
+    rows.forEach((v, idx) => { v.gps_altitude_cm = parseInt(v.gps_altitude_cm, 10) })
+    insertRows(rows, config, (err, data) => {
+      if (!err) {
+        console.log('insert ok.')
+        res.status(200).send('ok')
+      }
+      else {
+        if (Array.isArray(err.errors)) {
+          err.errors.forEach((v, idx) => {
+            v.errors.forEach((v, idx) => {
+              console.error(`---- error: ${v.message}`)
+            })
+          })
+        } else {
+          console.error(`error - `, err)
+        }
+        res.status(500).send('insert error')
+      }
+    })
   }
   else {
     res.status(500).send('Forbidden!')
